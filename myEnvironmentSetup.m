@@ -16,6 +16,9 @@ classdef myEnvironmentSetup <handle
         strings
         stringstiffness
         bars
+        K
+        barStCoeff
+        delT
         
         %Initial parameters that can be initialized from Python
         tspan
@@ -27,12 +30,19 @@ classdef myEnvironmentSetup <handle
     end
     
     methods
-        function env=myEnvironmentSetup(tspan,wallPosition,wallHeight,deltaSpool)
+        function env=myEnvironmentSetup(tspan,wallPosition,wallHeight,deltaSpool,delT)
             addpath('tensegrityObjects')
 
+            % Inputs from user
             env.tspan=tspan;
-            env.cDamp=400;
             env.deltaSpool=deltaSpool;
+            
+            %Costumizable parameters
+            env.cDamp=400; % String damping coeff
+            env.K = 1000;  % String stiffness coeff
+            env.barStCoeff=100000; % Bar stiffness coedd
+            env.delT=delT; % Delta Time
+            
             
             % Wall 1 and 4 are positive values
             env.wallPos=wallPosition;
@@ -45,12 +55,11 @@ classdef myEnvironmentSetup <handle
             env.strings = [1  1   1  1  2  2  2  2  3  3  3  3  4  4  4  4  5  5  6  6  7  7  8  8;
                        7  8  10 12  5  6 10 12  7  8  9 11  5  6  9 11 11 12  9 10 11 12  9 10];
 
-            K = 1000;
-            env.stringstiffness = K*ones(24,1); % String stiffness (N/m)
-            barStiffness = 100000*ones(6,1); % Bar stiffness (N/m)
+            
+            env.stringstiffness = env.K*ones(24,1); % String stiffness (N/m)
+            barStiffness = env.barStCoeff*ones(6,1); % Bar stiffness (N/m)
             stringDamping = env.cDamp*ones(24,1);  % String damping vector
             nodalMass = 1.625*ones(12,1);
-            delT = 0.001;
 
             bar_radius = 0.025; % meters
             string_radius = 0.005;
@@ -71,7 +80,8 @@ classdef myEnvironmentSetup <handle
                      -barLength*0.5  0              barSpacing];
 
             % Rotate superball to the "reset" position
-            HH=makehgtform('zrotate',pi/4);
+            % 1/4 for z rotation (previous)
+            HH=makehgtform('zrotate',9*pi/36);
             env.nodes = (HH(1:3,1:3)*env.nodes')';
             HH=makehgtform('xrotate',11*pi/36);
             env.nodes = (HH(1:3,1:3)*env.nodes')';
@@ -84,7 +94,7 @@ classdef myEnvironmentSetup <handle
             stringRestLength = 0.9*ones(24,1)*norm(env.nodes(1,:)-env.nodes(7,:));
 
             env.superBall = TensegrityStructure(env.nodes, env.strings, env.bars, zeros(12,3), env.stringstiffness,...
-                barStiffness, stringDamping, nodalMass, delT, delT, stringRestLength,env.wallPos,env.wallNeg);
+                barStiffness, stringDamping, nodalMass, env.delT, env.delT, stringRestLength,env.wallPos,env.wallNeg);
 
             env.superBallDynamicsPlot = TensegrityPlot(env.nodes, env.strings, env.bars, bar_radius, string_radius);
             
@@ -154,6 +164,7 @@ classdef myEnvironmentSetup <handle
             xlabel('x'); ylabel('y'); zlabel('z');
         end
         
+        
         function observations=actionStep(env, actions)
             
             persistent tensStruct dynamicsPlot tspan 
@@ -165,32 +176,46 @@ classdef myEnvironmentSetup <handle
             end  
             
 
-            spoolingDistance=zeros(24,1);
-            motorsToMove=actions>0;
+            %spoolingDistance=zeros(24,1);
+            %motorsToMove=actions>0;
             for i=1:24
                 %actions=1 means that rest length of string has to increase
-                if actions(i)==1
-                    spoolingDistance(i)=env.deltaSpool;
+                if actions(i)==1 
+                    newL= tensStruct.simStruct.stringRestLengths(i)+env.deltaSpool;
+                    %spoolingDistance(i)=env.deltaSpool;
                 %actions=2 means that rest length of string has to increase
                 elseif actions(i)==2
-                    spoolingDistance(i)=-env.deltaSpool;
+                    newL= tensStruct.simStruct.stringRestLengths(i)-env.deltaSpool;
+                    %spoolingDistance(i)=-env.deltaSpool;
+                end
+                
+                %Do not allow large or small string length measurements
+                %if actions(i)>0 && newL>1.0 && newL<1.8
+                if actions(i)>0 
+                    tensStruct.simStruct.stringRestLengths(i) = newL;
                 end
             end
             %Apply actions
-            tensStruct.simStruct.stringRestLengths(motorsToMove) = tensStruct.simStruct.stringRestLengths(motorsToMove)+spoolingDistance(motorsToMove);
+            %tensStruct.simStruct.stringRestLengths(motorsToMove) = tensStruct.simStruct.stringRestLengths(motorsToMove)+spoolingDistance(motorsToMove);
 
             % Update nodes:
             dynamicsUpdate(tensStruct, tspan);
             dynamicsPlot.nodePoints = tensStruct.ySim(1:end/2,:);
-            updatePlot(dynamicsPlot);
-
-            drawnow  %plot it up
 
 
             %Get new rest lengths after action is performed
             observations=tensStruct.simStruct.stringRestLengths;
 
 
+        end
+        
+        
+        function updateGraph(env)
+            
+            updatePlot(env.superBallDynamicsPlot);
+
+            drawnow  %plot it up
+            
         end
         
         
@@ -212,6 +237,7 @@ classdef myEnvironmentSetup <handle
             end
         end
         
+        
         %This function is used to reset the environment at the beginning of
         %every new episode
         function observations= envReset(env)
@@ -222,6 +248,9 @@ classdef myEnvironmentSetup <handle
             stabilizationUpdate(env);
 
             %reset rewards
+            
+            updatePlot(env.superBallDynamicsPlot);
+            drawnow  %plot it up
             env.rewards=0;
             
             %Reset observations
@@ -242,9 +271,9 @@ classdef myEnvironmentSetup <handle
                 % Update nodes:
                 dynamicsUpdate(env.superBall, env.tspan);
                 env.superBallDynamicsPlot.nodePoints = env.superBall.ySim(1:end/2,:);
-                updatePlot(env.superBallDynamicsPlot);
+                %updatePlot(env.superBallDynamicsPlot);
 
-                drawnow  %plot it up
+               %drawnow  %plot it up
                 i=i+1;
                 
                 if env.superBallDynamicsPlot.plotErrorFlag==1
@@ -263,19 +292,19 @@ classdef myEnvironmentSetup <handle
         %This function brings superBall in its initial position between the
         %walls
         function resetSuperball(env)
-            K = 1000;
-            env.stringstiffness = K*ones(24,1); % String stiffness (N/m)
-            barStiffness = 100000*ones(6,1); % Bar stiffness (N/m)
+            
+            env.stringstiffness = env.K*ones(24,1); % String stiffness (N/m)
+            barStiffness = env.barStCoeff*ones(6,1); % Bar stiffness (N/m)
             stringDamping = env.cDamp*ones(24,1);  % String damping vector
             nodalMass = 1.625*ones(12,1);
-            delT = 0.001;
             stringRestLength = 0.9*ones(24,1)*norm(env.nodes(1,:)-env.nodes(7,:));
             
+            
             env.superBall = TensegrityStructure(env.nodes, env.strings, env.bars, zeros(12,3), env.stringstiffness,...
-            barStiffness, stringDamping, nodalMass, delT, delT, stringRestLength,env.wallPos,env.wallNeg);
+            barStiffness, stringDamping, nodalMass, env.delT, env.delT, stringRestLength,env.wallPos,env.wallNeg);
 
-            updatePlot(env.superBallDynamicsPlot);
-            disp('superball should be in starting position');
+            %updatePlot(env.superBallDynamicsPlot);
+
         end
         
     end

@@ -38,10 +38,8 @@ classdef TensegrityStructure < handle
         ySim
         
         %Wall coordinates
-        wall1
-        wall2
-        wall3
-        wall4
+        wallPos
+        wallNeg
         
         ySimUKF
         groundHeight
@@ -57,7 +55,7 @@ classdef TensegrityStructure < handle
     end
     
     methods
-        function obj = TensegrityStructure(nodePoints, stringNodes, barNodes, F,stringStiffness,barStiffness,stringDamping,nodalMass,delT,delTUKF,stringRestLengths,wall1,wall2,wall3,wall4)
+        function obj = TensegrityStructure(nodePoints, stringNodes, barNodes, F,stringStiffness,barStiffness,stringDamping,nodalMass,delT,delTUKF,stringRestLengths,wallPos,wallNeg)
             if(size(nodePoints,2)~=3 || ~isnumeric(nodePoints))
                 error('node points should be n by 3 matrix of doubles')
             end
@@ -162,10 +160,9 @@ classdef TensegrityStructure < handle
             obj.delTUKF = delTUKF;
             
             
-            obj.wall1=wall1;
-            obj.wall2=wall2;
-            obj.wall3=wall3;
-            obj.wall4=wall4;
+            obj.wallPos=wallPos;
+            obj.wallNeg=wallNeg;
+
 
                 
             
@@ -352,22 +349,15 @@ classdef TensegrityStructure < handle
                 
                 %update points not in contact with the ground
                 notTouchingGround = (nodeXYZ(:,3) - groundH)>0;
-                if or(and(~notTouchingGround==logical(zeros(12,1)), rewardCnt==0),and(~notTouchingGround==logical(zeros(12,1))&& rewardMemory~=0)
-                    rewardCnt=rewardCnt+1;
-                    rewardMemory=1;
-                else
-                    rewardCnt=0;
-                    rewardMemory=0;
-                end
-                obj.rewardTouchingGnd=rewardCnt;
+                
                 %Update points not in contact with the wall
                 %Wall 1 and 2 are on the zy plane
                 %Wall 3 and 4 are on the zx plane
                 %Determine which walls the endcaps are touching
-                touchingWall1= (nodeXYZ(:,1)-obj.wall1)>0;
-                touchingWall2= (nodeXYZ(:,1)-obj.wall2)<0;
-                touchingWall3= (nodeXYZ(:,2)-obj.wall3)<0;
-                touchingWall4= (nodeXYZ(:,2)-obj.wall4)>0;
+                touchingWall1= (nodeXYZ(:,1)-obj.wallPos)>0;
+                touchingWall2= (nodeXYZ(:,1)-obj.wallNeg)<0;
+                touchingWall3= (nodeXYZ(:,2)-obj.wallNeg)<0;
+                touchingWall4= (nodeXYZ(:,2)-obj.wallPos)>0;
                 %Determine which endcaps are not touching any wall
                 notTouchingWallYZ = ~touchingWall1 & ~touchingWall2;
                 notTouchingWallXZ = ~touchingWall3 & ~touchingWall4;
@@ -378,11 +368,11 @@ classdef TensegrityStructure < handle
                 
                 %Compute normal forces for the wall
                 % Separate computation for stuff on YZ and XZ planes
-                normForcesWallYZ=(obj.wall1-nodeXYZ(:,1)).*(KpW - KdW*nodeXYZdot(:,1));
-                normForcesWallYZ(touchingWall2)=(obj.wall2-nodeXYZ(touchingWall2,1)).*(KpW - KdW*nodeXYZdot(touchingWall2,1));
+                normForcesWallYZ=(obj.wallPos-nodeXYZ(:,1)).*(KpW - KdW*nodeXYZdot(:,1));
+                normForcesWallYZ(touchingWall2)=(obj.wallNeg-nodeXYZ(touchingWall2,1)).*(KpW - KdW*nodeXYZdot(touchingWall2,1));
                 normForcesWallYZ(notTouchingWallYZ)=0;
-                normForcesWallXZ=(obj.wall3-nodeXYZ(:,2)).*(KpW - KdW*nodeXYZdot(:,2));
-                normForcesWallXZ(touchingWall4)=(obj.wall4-nodeXYZ(touchingWall4,2)).*(KpW - KdW*nodeXYZdot(touchingWall4,2));
+                normForcesWallXZ=(obj.wallNeg-nodeXYZ(:,2)).*(KpW - KdW*nodeXYZdot(:,2));
+                normForcesWallXZ(touchingWall4)=(obj.wallPos-nodeXYZ(touchingWall4,2)).*(KpW - KdW*nodeXYZdot(touchingWall4,2));
                 normForcesWallXZ(notTouchingWallXZ)=0;
                 %Get velocity for the three planes (xy,yz and xz)
                 % Velocity on the xy plane will be used for ground forces
@@ -459,6 +449,29 @@ classdef TensegrityStructure < handle
                 % Apply gravity
                 nodeXYZdoubleDot(:,3) = nodeXYZdoubleDot(:,3)  -9.81;
                 nodeXYZdoubleDot(fN,:) = 0;
+                
+
+                %Make sure that all the walls are touched to give a reward
+                %TODO change this condtion to something that makes more
+                %sense
+                disp(sum(touchingWall1)
+                disp(sum(touchingWall2)
+                disp(touchingWall3)
+                disp(touchingWall4)
+                rewardWallTouching=and(and(sum(touchingWall1)>0,sum(touchingWall2)>0),and(sum(touchingWall3)>0,sum(touchingWall4)>0));
+                
+                %Compute rewards
+                if and(and(~notTouchingGround==logical(zeros(12,1)),rewardWallTouching==True),or(rewardCnt==0,rewardMemory==1))
+                    rewardCnt=rewardCnt+1;
+                    rewardMemory=1;
+                else
+                    rewardCnt=0;
+                    rewardMemory=0;
+                end
+                
+                obj.rewardTouchingGnd=rewardCnt;
+                
+                
             end
         end
         

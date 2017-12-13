@@ -349,14 +349,7 @@ classdef TensegrityStructure < handle
                 
                 %update points not in contact with the ground
                 notTouchingGround = (nodeXYZ(:,3) - groundH)>0;
-                if or(and(~notTouchingGround==logical(zeros(12,1)), rewardCnt==0),and(~notTouchingGround==logical(zeros(12,1)),rewardMemory==1))
-                    rewardCnt=rewardCnt+1;
-                    rewardMemory=1;
-                else
-                    rewardCnt=0;
-                    rewardMemory=0;
-                end
-                obj.rewardTouchingGnd=rewardCnt;
+                
                 %Update points not in contact with the wall
                 %Wall 1 and 2 are on the zy plane
                 %Wall 3 and 4 are on the zx plane
@@ -456,6 +449,37 @@ classdef TensegrityStructure < handle
                 % Apply gravity
                 nodeXYZdoubleDot(:,3) = nodeXYZdoubleDot(:,3)  -9.81;
                 nodeXYZdoubleDot(fN,:) = 0;
+                
+
+                %Make sure that all the walls are touched to give a reward
+                %TODO change this condtion to something that makes more
+                %sense
+                rewardWallTouching=and(and(sum(touchingWall1)>0,sum(touchingWall2)>0),and(sum(touchingWall3)>0,sum(touchingWall4)>0));
+                
+                %Compute rewards
+%                 if and(and(~notTouchingGround==logical(zeros(12,1)),rewardWallTouching==1),or(rewardCnt==0,rewardMemory==1))
+%                     rewardCnt=rewardCnt+1;
+%                     rewardMemory=1;
+%                 else
+%                     rewardCnt=0;
+%                     rewardMemory=0;
+%                 end
+%                 
+%                 obj.rewardTouchingGnd=rewardCnt;
+
+                if and(~notTouchingGround==logical(zeros(12,1)),xor(rewardCnt==0,rewardMemory==1))
+                    rewardCnt=rewardCnt+1;
+                    rewardMemory=1;
+
+                else
+                    rewardCnt=0;
+                    rewardMemory=0;
+                end
+                
+                obj.rewardTouchingGnd=rewardCnt;
+
+                
+                
             end
         end
         
