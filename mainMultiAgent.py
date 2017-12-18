@@ -24,8 +24,7 @@ delT=0.001             #time step
 graphRefresh=1000 #used to refresh every second
 
 #Define how much the motors can spool in or out.
-deltaSpool=0.01
-
+deltaSpool=0.001
 
 env=matlab.myEnvironmentSetup(tspan,wallPosition,wallHeight,deltaSpool,delT)
 
@@ -43,6 +42,7 @@ j_episode=0
 error_cnt=0                 #Number of times the simulation crashed
 
 MOTOR_NUMBER=24
+RENDER=False
 
 totRewardArray=[]
 
@@ -60,14 +60,12 @@ while j_episode<episode_number:
     #Start Evaluation Timer
     start = timeit.default_timer()
     #Reset environment
-    features = matlab.envReset(env)
+    features = matlab.envReset(env,RENDER)
     #Observe initial length of the strings
     features=np.reshape(features,(1,MOTOR_NUMBER))
 
 
     for i in range(max_ep_cycles):
-
-
 
         action=[]
 
@@ -77,7 +75,6 @@ while j_episode<episode_number:
         # Collect new features rewards and done signal from environment after having performed the action
         # Separated in three functions because transplant could not handle multiple output functions
         observations= matlab.actionStep(env,action)
-
 
         #Compute rewards for the cycle
         rewards = matlab.computeRewards(env)
@@ -100,17 +97,19 @@ while j_episode<episode_number:
         for tr in range(MOTOR_NUMBER):
             agent['A'+str(tr)].store_transition(features,action[tr],rewards)
 
-        #matlab.updateGraph(env)
+        if RENDER:
+            matlab.updateGraph(env)
         # If the environment asserts the done signal, collect reward and start a new episode
         #Done if 300 iterations are completed
 
     if not(env.superBallDynamicsPlot.plotErrorFlag==1):
         #print(agent['A0'].ep_rewards)
         ep_rewards_sum=sum(agent['A0'].ep_rewards)
+
         totRewardArray=np.append(totRewardArray,ep_rewards_sum)
 
         print("episode:", j_episode, " cycle ",i, "  reward:", int(ep_rewards_sum))
-        print("accumulated rewards for MultiAgent: ",totRewardArray)
+        print("Accumulated rewards for MultiAgent: ",totRewardArray)
         discounted_r= agent['A0'].computeDiscountedRewards()
 
         for i in range(MOTOR_NUMBER):
@@ -118,6 +117,10 @@ while j_episode<episode_number:
 
         error_cnt=0
         j_episode += 1
+
+        #Start rendering if the last 5 rewards are > 0
+        if totRewardArray[len(totRewardArray)-1]>0 and totRewardArray[len(totRewardArray)-2]>0 and totRewardArray[len(totRewardArray)-3]>0 and totRewardArray[len(totRewardArray)-4]>0 and totRewardArray[len(totRewardArray)-5]>0:
+            RENDER=True
 
         stop = timeit.default_timer()
 

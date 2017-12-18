@@ -1,5 +1,5 @@
 classdef myEnvironmentSetup <handle
-    %MYENVIRONMENTSETUP Thois class contains functions used to emulate
+    %MYENVIRONMENTSETUP This class contains functions used to emulate
     %SuperBall's escape from a crater. They are used by the Python's
     %reinforcement learning algorithm to get information regarding the
     %environment.
@@ -110,7 +110,7 @@ classdef myEnvironmentSetup <handle
             % use a method within TensegrityPlot class to generate a plot of the
             % structure
             generatePlot(env.superBallDynamicsPlot,gca);
-            updatePlot(env.superBallDynamicsPlot);
+            updatePlot(env.superBallDynamicsPlot,env.superBall.touchingWall);
 
             %settings to make it pretty
             axis equal
@@ -212,7 +212,7 @@ classdef myEnvironmentSetup <handle
         
         function updateGraph(env)
             
-            updatePlot(env.superBallDynamicsPlot);
+            updatePlot(env.superBallDynamicsPlot,env.superBall.touchingWall);
 
             drawnow  %plot it up
             
@@ -220,12 +220,10 @@ classdef myEnvironmentSetup <handle
         
         
         function reward= computeRewards(env)
-            if env.superBall.rewardTouchingGnd>1
-                reward=env.rewards+10;
-                env.rewards=reward;
+            if env.superBall.rewardTouchingGnd>0
+                reward=env.superBall.rewardTouchingGnd;
             else
                 reward=0;
-                env.rewards=0;
             end
         end
         
@@ -240,17 +238,18 @@ classdef myEnvironmentSetup <handle
         
         %This function is used to reset the environment at the beginning of
         %every new episode
-        function observations= envReset(env)
+        function observations= envReset(env,render)
             
-            resetSuperball(env);
+            resetSuperball(env,render);
             
             %wait for stabilization to be complete
-            stabilizationUpdate(env);
+            stabilizationUpdate(env,render);
 
             %reset rewards
-            
-            updatePlot(env.superBallDynamicsPlot);
-            drawnow  %plot it up
+            if render
+                updatePlot(env.superBallDynamicsPlot,env.superBall.touchingWall);
+                drawnow  %plot it up
+            end
             env.rewards=0;
             
             %Reset observations
@@ -261,7 +260,7 @@ classdef myEnvironmentSetup <handle
         %This function lets superball bounce on the walls without any motor
         %being activated. It allows the robot to stabilize before starting
         %a learning episode
-        function stabilizationUpdate(env)
+        function stabilizationUpdate(env,render)
             
             %Wait 50 cycles to make SuperBall stabilize before the new
             %episode
@@ -271,9 +270,13 @@ classdef myEnvironmentSetup <handle
                 % Update nodes:
                 dynamicsUpdate(env.superBall, env.tspan);
                 env.superBallDynamicsPlot.nodePoints = env.superBall.ySim(1:end/2,:);
-                %updatePlot(env.superBallDynamicsPlot);
+                
+                if render
+                    
+                    updatePlot(env.superBallDynamicsPlot,env.superBall.touchingWall);
 
-               %drawnow  %plot it up
+                    drawnow  %plot it up
+                end
                 i=i+1;
                 
                 if env.superBallDynamicsPlot.plotErrorFlag==1
@@ -281,7 +284,7 @@ classdef myEnvironmentSetup <handle
                     disp('Restart Initialization');
                     i=0;
                     
-                    resetSuperball(env);
+                    resetSuperball(env,render);
                 end
                 
             end
@@ -291,7 +294,7 @@ classdef myEnvironmentSetup <handle
         
         %This function brings superBall in its initial position between the
         %walls
-        function resetSuperball(env)
+        function resetSuperball(env,render)
             
             env.stringstiffness = env.K*ones(24,1); % String stiffness (N/m)
             barStiffness = env.barStCoeff*ones(6,1); % Bar stiffness (N/m)
@@ -302,8 +305,10 @@ classdef myEnvironmentSetup <handle
             
             env.superBall = TensegrityStructure(env.nodes, env.strings, env.bars, zeros(12,3), env.stringstiffness,...
             barStiffness, stringDamping, nodalMass, env.delT, env.delT, stringRestLength,env.wallPos,env.wallNeg);
-
-            %updatePlot(env.superBallDynamicsPlot);
+            
+            if render
+                updatePlot(env.superBallDynamicsPlot,env.superBall.touchingWall);
+            end
 
         end
         

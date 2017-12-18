@@ -13,10 +13,14 @@ classdef TensegrityPlot < handle
         sphereTForm           %transform object for spheres which sit at nodes in plot
         memberTForms              %transform object for bar cylinders
         plotErrorFlag           %Signals that an error occurred in the configuration of superBall. Used to quit epoch.
+        h
+        touchingWall
     end
     methods
         function obj = TensegrityPlot(nodePoints, stringNodes, barNodes, barRad, stringRad)
             
+            obj.touchingWall=zeros(12,1);
+            obj.h=cell(12,1);
             %Initialize error flag
             obj.plotErrorFlag=0;
             
@@ -86,12 +90,7 @@ classdef TensegrityPlot < handle
             obj.sphereTForm = gobjects(obj.n,1);
             hold(ax,'on');
             for i = 1:obj.n
-                %even endcaps are red, odd endcaps are cyan
-                if mod(i,2)==0
-                    sphereHandle = surf(ax,xx,yy,zz,'LineStyle', 'none','FaceColor','r');
-                else
-                    sphereHandle = surf(ax,xx,yy,zz,'LineStyle', 'none','FaceColor','c');
-                end
+                sphereHandle = surf(ax,xx,yy,zz,'LineStyle', 'none','FaceColor','c');
                 obj.sphereTForm(i) = hgtransform('Parent',ax);
                 set(sphereHandle,'Parent',obj.sphereTForm(i))
                 set(obj.sphereTForm(i),'matrix',makehgtform('translate',obj.nodePoints(i,:)));
@@ -120,9 +119,28 @@ classdef TensegrityPlot < handle
             end
             obj.memberTForms = [barTForm; stringTForm];
         end
-        function updatePlot(obj)
+        
+        function updatePlot(obj,touchingWall)
             nn = obj.n;
             HH = cell(nn,1);
+            %Change color of endcaps that are touching the walls
+            
+           
+            for i = 1:obj.n
+                if obj.touchingWall(i)>0
+                    set(obj.h{i},'Visible','off');
+                end
+
+            end
+            obj.touchingWall=touchingWall;
+            for i = 1:obj.n
+                if obj.touchingWall(i)>0
+                    obj.h{i}=scatter3(obj.nodePoints(i,1),obj.nodePoints(i,2),obj.nodePoints(i,3));
+                    obj.h{i}.SizeData=150;
+                end
+
+            end
+            
             for i =1:nn
                 HH{i} = [eye(3), obj.nodePoints(i,:)'; 0 0 0 1] ;
             end
@@ -143,6 +161,8 @@ classdef TensegrityPlot < handle
                 obj.plotErrorFlag=1;
 
             end
+            
+            
         end
         
     end

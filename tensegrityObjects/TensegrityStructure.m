@@ -51,6 +51,7 @@ classdef TensegrityStructure < handle
         
         %variable used for reward scheme
         rewardTouchingGnd
+        touchingWall
         
     end
     
@@ -163,7 +164,7 @@ classdef TensegrityStructure < handle
             obj.wallPos=wallPos;
             obj.wallNeg=wallNeg;
 
-
+            obj.touchingWall=zeros(12,1);
                 
             
         end
@@ -254,10 +255,10 @@ classdef TensegrityStructure < handle
             kFD = 5000;
             
              %friction model constants WALL
-            KpW = 30000;
+            KpW = 40000;
             KdW = 5000;
-            muSW = 0.64;
-            muDW = 0.54;
+            muSW = 0.8;
+            muDW = 0.7;
             kkW = 1000;
             kFPW = 30000;
             kFDW = 5000;
@@ -361,6 +362,7 @@ classdef TensegrityStructure < handle
                 %Determine which endcaps are not touching any wall
                 notTouchingWallYZ = ~touchingWall1 & ~touchingWall2;
                 notTouchingWallXZ = ~touchingWall3 & ~touchingWall4;
+                obj.touchingWall=touchingWall1 | touchingWall2 | touchingWall3 | touchingWall4;
                 
                 %Compute normal forces for the ground
                 normForces = (groundH-nodeXYZ(:,3)).*(Kp - Kd*nodeXYZdot(:,3));
@@ -452,9 +454,9 @@ classdef TensegrityStructure < handle
                 
 
                 %Make sure that all the walls are touched to give a reward
-                %TODO change this condtion to something that makes more
-                %sense
-                rewardWallTouching=and(and(sum(touchingWall1)>0,sum(touchingWall2)>0),and(sum(touchingWall3)>0,sum(touchingWall4)>0));
+                %Create logical array that contains wall touching
+                %information
+                rewardWallTouching=[sum(touchingWall1)>0 sum(touchingWall2)>0 sum(touchingWall3)>0 sum(touchingWall4)>0];
                 
                 %Compute rewards
 %                 if and(and(~notTouchingGround==logical(zeros(12,1)),rewardWallTouching==1),or(rewardCnt==0,rewardMemory==1))
@@ -467,7 +469,7 @@ classdef TensegrityStructure < handle
 %                 
 %                 obj.rewardTouchingGnd=rewardCnt;
 
-                if and(~notTouchingGround==logical(zeros(12,1)),xor(rewardCnt==0,rewardMemory==1))
+                if and(and(~notTouchingGround==logical(zeros(12,1)),xor(rewardCnt==0,rewardMemory==1)),sum(rewardWallTouching)>3)
                     rewardCnt=rewardCnt+1;
                     rewardMemory=1;
 

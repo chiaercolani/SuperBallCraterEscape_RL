@@ -42,6 +42,7 @@ j_episode=0
 error_cnt=0                 #Number of times the simulation crashed
 
 MOTOR_NUMBER=24
+RENDER=False
 
 totRewardArray=[]
 
@@ -56,13 +57,11 @@ while j_episode<episode_number:
     #Start Evaluation Timer
     start = timeit.default_timer()
     #Observe initial rest lengths of the strings
-    features = matlab.envReset(env)
+    features = matlab.envReset(env,RENDER)
 
     features=np.reshape(features,(24,1))
 
     for i in range(max_ep_cycles):
-
-
 
         action=agent.pick_action(features)
         # Collect new features rewards and done signal from environment after having performed the action
@@ -83,7 +82,8 @@ while j_episode<episode_number:
         # Store the transition
         agent.store_transition(features,action,rewards)
 
-        #matlab.updateGraph(env)
+        if RENDER:
+            matlab.updateGraph(env)
         # If the environment asserts the done signal, collect reward and start a new episode
 
     if not(env.superBallDynamicsPlot.plotErrorFlag==1):
@@ -91,12 +91,18 @@ while j_episode<episode_number:
         totRewardArray=np.append(totRewardArray,ep_rewards_sum)
 
         print("episode:", j_episode, "  episode reward:", int(ep_rewards_sum))
-        print("accumulated rewards for SingleAgent: ",totRewardArray)
+        print("Accumulated rewards for SingleAgent: ",totRewardArray)
         discounted_r= agent.computeDiscountedRewards()
         agent.nn_learn(discounted_r)
 
         error_cnt=0
         j_episode += 1
+
+        #Start rendering if the last 5 rewards are > 0
+        if totRewardArray[len(totRewardArray)-1]>0 and totRewardArray[len(totRewardArray)-2]>0 and totRewardArray[len(totRewardArray)-3]>0 and totRewardArray[len(totRewardArray)-4]>0 and totRewardArray[len(totRewardArray)-5]>0:
+            RENDER=True
+        else:
+            RENDER=False
 
         stop = timeit.default_timer()
 
