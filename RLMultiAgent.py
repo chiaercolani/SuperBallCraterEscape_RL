@@ -1,6 +1,7 @@
 
 import numpy as np
 import tensorflow as tf
+import os
 
 
 class agent_class:
@@ -14,6 +15,7 @@ class agent_class:
         self.gamma=gamma
         self.L=L
         self.n=n
+        self.dir= os.path.dirname(os.path.realpath(__file__))
 
         self.ep_observations, self.ep_actions, self.ep_rewards = [], [], []
 
@@ -55,6 +57,9 @@ class agent_class:
         # Run the session and initialize all the variables
         self.sess.run(tf.global_variables_initializer())
 
+        #Define saver object to save NN
+        self.saver=tf.train.Saver()
+
     def sessionClose(self):
         self.sess.close()
 
@@ -69,7 +74,7 @@ class agent_class:
         action =np.random.choice(3,1, p=prob_dist)
 
         return action
-    
+
     def cancel_transition(self):
         # Initialize episode observations, actions and rewards
         self.ep_observations, self.ep_actions, self.ep_rewards = [], [], []
@@ -102,3 +107,12 @@ class agent_class:
 
         # Initialize episode observations, actions and rewards after learning
         self.ep_observations, self.ep_actions, self.ep_rewards = [], [], []
+
+    def saveSession(self,i):
+        self.saver.save(self.sess,self.dir+'/results/agent'+str(i))
+
+
+    def saveRewards(self,rewards):
+        #np.savetxt(self.dir+'/results/rewards.txt','NEW LINE')
+        np.savetxt(self.dir+'/results/rewards.txt',rewards)
+        #r=rewards.tolist())
