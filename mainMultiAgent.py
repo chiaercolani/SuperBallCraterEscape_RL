@@ -38,8 +38,8 @@ lr=0.02                     # Learning rate
 H=8                         # Size of the hidden layer
 L=1                         # Number of hidden layers (exclude input and output layers)
 gamma=0.99                  # Gamma used to decay the rewards, higher gamma values= future matters more
-episode_number=3000         # Number of episodes used to train the NN
-max_ep_cycles=300           # Maximum number of cycles in each episode
+episode_number=400         # Number of episodes used to train the NN
+max_ep_cycles=3000           # Maximum number of cycles in each episode
 j_episode=0
 error_cnt=0                 #Number of times the simulation crashed
 
@@ -121,9 +121,15 @@ while j_episode<episode_number:
         j_episode += 1
 
         #Start rendering if the last 5 rewards are > 0
-        if totRewardArray[len(totRewardArray)-1]>0 and totRewardArray[len(totRewardArray)-2]>0 and totRewardArray[len(totRewardArray)-3]>0 and totRewardArray[len(totRewardArray)-4]>0 and totRewardArray[len(totRewardArray)-5]>0:
-            RENDER=True
+        #if len(totRewardArray)>5 and totRewardArray[len(totRewardArray)-1]>0 and totRewardArray[len(totRewardArray)-2]>0 and totRewardArray[len(totRewardArray)-3]>0 and totRewardArray[len(totRewardArray)-4]>0 and totRewardArray[len(totRewardArray)-5]>0:
+        #    RENDER=True
 
         stop = timeit.default_timer()
 
         print ("Iteration time MultiAgent: ",stop - start )
+
+#Save tensorflow session and the rewards variables
+for i in range(MOTOR_NUMBER):
+    agent['A'+str(i)].saveSession(i)
+
+agent['A0'].saveRewards(totRewardArray)

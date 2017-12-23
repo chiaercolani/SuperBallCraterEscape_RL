@@ -165,6 +165,8 @@ classdef TensegrityStructure < handle
             obj.wallNeg=wallNeg;
 
             obj.touchingWall=zeros(12,1);
+            
+            obj.rewardTouchingGnd=0;
                 
             
         end
@@ -229,7 +231,7 @@ classdef TensegrityStructure < handle
         
         %%%%%%%%%%%%%%%%%%% Dynamics Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function dynamicsUpdate(obj,tspan,y0)
-            persistent lastContact lastContactWallYZ lastContactWallXZ rewardCnt rewardMemory
+            persistent lastContact lastContactWallYZ lastContactWallXZ rewardMemory
             if(nargin>2)
                 obj.ySim = y0;
             end
@@ -238,8 +240,9 @@ classdef TensegrityStructure < handle
                 lastContact = obj.nodePoints(:,1:2);
                 lastContactWallYZ=obj.nodePoints(:,2:3);
                 lastContactWallXZ=obj.nodePoints(:,[1 3]);
-                rewardCnt=0;
+                %rewardCnt=0;
                 rewardMemory=0;
+                obj.rewardTouchingGnd=0;
             else
                 y = obj.ySim;
             end
@@ -459,26 +462,29 @@ classdef TensegrityStructure < handle
                 rewardWallTouching=[sum(touchingWall1)>0 sum(touchingWall2)>0 sum(touchingWall3)>0 sum(touchingWall4)>0];
                 
                 %Compute rewards
-%                 if and(and(~notTouchingGround==logical(zeros(12,1)),rewardWallTouching==1),or(rewardCnt==0,rewardMemory==1))
+
+%                 if and(and(~notTouchingGround==logical(zeros(12,1)),xor(rewardCnt==0,rewardMemory==1)),sum(rewardWallTouching)>3)
 %                     rewardCnt=rewardCnt+1;
 %                     rewardMemory=1;
+% 
 %                 else
 %                     rewardCnt=0;
 %                     rewardMemory=0;
 %                 end
-%                 
-%                 obj.rewardTouchingGnd=rewardCnt;
 
-                if and(and(~notTouchingGround==logical(zeros(12,1)),xor(rewardCnt==0,rewardMemory==1)),sum(rewardWallTouching)>3)
-                    rewardCnt=rewardCnt+1;
+                
+                if and(and(~notTouchingGround==logical(zeros(12,1)),sum(rewardWallTouching)>3),rewardMemory==0)
+                    obj.rewardTouchingGnd=obj.rewardTouchingGnd+1;
+                    %rewardMemory=1;
+
+                elseif and(~notTouchingGround==logical(zeros(12,1)),sum(rewardWallTouching)<3)
+                    obj.rewardTouchingGnd=-10;
                     rewardMemory=1;
-
-                else
-                    rewardCnt=0;
-                    rewardMemory=0;
+                    %rewardCnt=0;
+                    %rewardMemory=0;
                 end
                 
-                obj.rewardTouchingGnd=rewardCnt;
+                %obj.rewardTouchingGnd=rewardCnt;
 
                 
                 

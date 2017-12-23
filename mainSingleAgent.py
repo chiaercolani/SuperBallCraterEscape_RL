@@ -26,7 +26,7 @@ delT=0.001             #time step
 graphRefresh=1000 #used to refresh every second
 
 #Define how much the motors can spool in or out.
-deltaSpool=0.01
+deltaSpool=0.001
 
 env=matlab.myEnvironmentSetup(tspan,wallPosition,wallHeight,deltaSpool,delT)
 
@@ -101,10 +101,10 @@ while j_episode<episode_number:
         j_episode += 1
 
         #Start rendering if the last 5 rewards are > 0
-        if totRewardArray[len(totRewardArray)-1]>0 and totRewardArray[len(totRewardArray)-2]>0 and totRewardArray[len(totRewardArray)-3]>0 and totRewardArray[len(totRewardArray)-4]>0 and totRewardArray[len(totRewardArray)-5]>0:
-            RENDER=True
-        else:
-            RENDER=False
+        #if len(totRewardArray)>5 and totRewardArray[len(totRewardArray)-1]>0 and totRewardArray[len(totRewardArray)-2]>0 and totRewardArray[len(totRewardArray)-3]>0 and totRewardArray[len(totRewardArray)-4]>0 and totRewardArray[len(totRewardArray)-5]>0:
+        #    RENDER=True
+        #else:
+        #    RENDER=False
 
         stop = timeit.default_timer()
 
