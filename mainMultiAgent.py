@@ -36,8 +36,8 @@ lr=0.02                     # Learning rate
 H=8                         # Size of the hidden layer
 L=1                         # Number of hidden layers (exclude input and output layers)
 gamma=0.99                  # Gamma used to decay the rewards, higher gamma values= future matters more
-episode_number=400         # Number of episodes used to train the NN
-max_ep_cycles=3000           # Maximum number of cycles in each episode
+episode_number=3000         # Number of episodes used to train the NN
+max_ep_cycles=300           # Maximum number of cycles in each episode
 j_episode=0
 error_cnt=0                 #Number of times the simulation crashed
 
