@@ -38,9 +38,9 @@ classdef myEnvironmentSetup <handle
             env.deltaSpool=deltaSpool;
             
             %Costumizable parameters
-            env.cDamp=400; % String damping coeff
+            env.cDamp=800; % String damping coeff
             env.K = 1000;  % String stiffness coeff
-            env.barStCoeff=100000; % Bar stiffness coedd
+            env.barStCoeff=100000; % Bar stiffness coeff
             env.delT=delT; % Delta Time
             
             
@@ -209,6 +209,11 @@ classdef myEnvironmentSetup <handle
 
         end
         
+        %Function that returns the coordinates of the center of mass
+        function coordinates=getCenterOfMass(env)
+            coordinates=mean(env.superBallDynamicsPlot.nodePoints(:,3));
+        end
+               
         
         function updateGraph(env)
             
@@ -266,15 +271,13 @@ classdef myEnvironmentSetup <handle
             %episode
             i=0;
             
-            while i<70
+            while i<50
                 % Update nodes:
                 dynamicsUpdate(env.superBall, env.tspan);
                 env.superBallDynamicsPlot.nodePoints = env.superBall.ySim(1:end/2,:);
                 
                 if render
-                    
                     updatePlot(env.superBallDynamicsPlot,env.superBall.touchingWall);
-
                     drawnow  %plot it up
                 end
                 i=i+1;
