@@ -231,7 +231,7 @@ classdef TensegrityStructure < handle
         
         %%%%%%%%%%%%%%%%%%% Dynamics Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function dynamicsUpdate(obj,tspan,y0)
-            persistent lastContact lastContactWallYZ lastContactWallXZ rewardCnt rewardMemory
+            persistent lastContact lastContactWallYZ lastContactWallXZ rewardMemory
             if(nargin>2)
                 obj.ySim = y0;
             end
@@ -314,6 +314,8 @@ classdef TensegrityStructure < handle
             end
             % Convert angle in degrees instead of radians
             angle=angle*180/pi;
+            
+            
             
             
             function nodeXYZdoubleDot = getAccel(nodeXYZ,nodeXYZdot)
@@ -473,13 +475,17 @@ classdef TensegrityStructure < handle
 %                 end
 
                 
-                if and(and(~notTouchingGround==logical(zeros(12,1)),sum(rewardWallTouching)>3),rewardMemory==0)
-                    obj.rewardTouchingGnd=obj.rewardTouchingGnd+1;
+                if and(notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)>=3)
+                    obj.rewardTouchingGnd=1;
+                    disp('increment rewards');
+                    disp(obj.rewardTouchingGnd);
                     %rewardMemory=1;
 
-                elseif and(~notTouchingGround==logical(zeros(12,1)),sum(rewardWallTouching)<3)
-                    obj.rewardTouchingGnd=-10;
-                    rewardMemory=1;
+                elseif and(notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)<3)
+                    obj.rewardTouchingGnd=-1;
+                    disp('decrement rewards');
+                    disp(obj.rewardTouchingGnd);
+                    %rewardMemory=1;
                     %rewardCnt=0;
                     %rewardMemory=0;
                 end

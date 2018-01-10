@@ -21,54 +21,46 @@ class agent_class:
         self.ep_observations, self.ep_actions, self.ep_rewards = [], [], []
 
         #INITALIZE NEURAL NETWORK
+        #graphName= "g"+str(self.n)
+        #graphName=tf.Graph()
+        self.graph=tf.Graph()
+        #self.sess=tf.Session(self.graph)
 
-        #Initialize placeholders and variables for NN
-        self.reward_holder = tf.placeholder(shape=[None,],dtype=tf.float32,name="reward_holder")
-        self.action_holder = tf.placeholder(shape=[None,],dtype=tf.int32,name="action_holder")
-        self.nn_features=tf.placeholder(tf.float32,[None,self.f_size],name="nn_features")
+        with self.graph.as_default():
+            #Initialize placeholders and variables for NN
+            self.reward_holder = tf.placeholder(shape=[None,],dtype=tf.float32,name="reward_holder")
+            self.action_holder = tf.placeholder(shape=[None,],dtype=tf.int32,name="action_holder")
+            self.nn_features=tf.placeholder(tf.float32,[None,self.f_size],name="nn_features")
 
-        # Initialize weights and biases
-        with tf.name_scope('init'):
-            Wx = tf.get_variable("Wx"+str(self.n), shape=[self.f_size, self.hl_size],initializer=tf.contrib.layers.xavier_initializer())
-            Wy = tf.get_variable("Wy"+str(self.n), shape=[self.hl_size, self.a_size],initializer=tf.contrib.layers.xavier_initializer())
-            bh = tf.Variable(tf.zeros([1,self.hl_size]));
-            by = tf.Variable(tf.zeros([1,self.a_size]));
-
-        # TODO normalize inputs and outputs
-        # change initilalization of weights and biases
-
-
-
-        # Hidden Layer of the NN: RELU
-        hidden1=tf.nn.relu(tf.matmul(self.nn_features,Wx)+bh)
-
-        # Output Layer of NN: Linear
-        actions=tf.matmul(hidden1,Wy)+by
-
-        # Compute probabilities with softmax function
-        self.actions_prob=tf.nn.softmax(actions,name='actions_prob')
-
-        #log_prob=[]
-        #for i in range(self.motorNumber):
-        #    log_prob = np.append(log_prob,tf.nn.sparse_softmax_cross_entropy_with_logits(logits=actions, labels=self.action_holder[:,i]))
+            # Initialize weights and biases
+            with tf.name_scope('init'):
+                Wx = tf.get_variable("Wx"+str(self.n), shape=[self.f_size, self.hl_size],initializer=tf.contrib.layers.xavier_initializer())
+                Wy = tf.get_variable("Wy"+str(self.n), shape=[self.hl_size, self.a_size],initializer=tf.contrib.layers.xavier_initializer())
+                bh = tf.Variable(tf.zeros([1,self.hl_size]),name="bh"+str(self.n));
+                by = tf.Variable(tf.zeros([1,self.a_size]),name="by"+str(self.n));
 
 
-        #log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=actions, labels=self.action_holder)
+            # Hidden Layer of the NN: RELU
+            hidden1=tf.nn.relu(tf.matmul(self.nn_features,Wx)+bh)
 
-        # Loss function
-        #loss=tf.reduce_mean(log_prob*self.reward_holder)
+            # Output Layer of NN: Linear
+            actions=tf.matmul(hidden1,Wy)+by
 
-        # Optimizer
-        #self.optimizer=tf.train.AdamOptimizer(self.lr).minimize(loss)
+            # Compute probabilities with softmax function
+            self.actions_prob=tf.nn.softmax(actions,name='actions_prob')
 
-        # Create TF session
-        self.sess=tf.Session()
+            #Define saver object to save NN
+            self.saver=tf.train.Saver()
 
-        # Run the session and initialize all the variables
-        self.sess.run(tf.global_variables_initializer())
+            # Create TF session
+            self.sess=tf.Session(graph=self.graph)
 
-        #Define saver object to save NN
-        self.saver=tf.train.Saver()
+            # Run the session and initialize all the variables
+            self.sess.run(tf.global_variables_initializer())
+
+            self.saver.save(self.sess,self.dir+'/bruteForceResults/network'+str(self.n))
+
+            #self.sess.close()
 
     def sessionClose(self):
         self.sess.close()
@@ -126,12 +118,13 @@ class agent_class:
         self.saver = tf.train.import_meta_graph(self.dir+'/bruteForceResults/network'+str(i)+'.meta')
         self.saver.restore(self.sess,self.dir+'/bruteForceResults/network'+str(i))
         # Get saved graph
-        self.graph=tf.get_default_graph()
+        #self.graph=tf.get_default_graph()
+        #print(self.graph.get_operations())
 
     def runSession(self,observations):
         self.sess.run(feed_dict={self.nn_features:observations})
 
     def saveCoordinates(self,coordinates):
         #np.savetxt(self.dir+'/results/rewards.txt','NEW LINE')
-        np.savetxt(self.dir+'/bruteForceResults/coordinates.txt',coordinates)
+        np.savetxt(self.dir+'/bruteForceResults2/coordinates.txt',coordinates)
         #r=rewards.tolist())
