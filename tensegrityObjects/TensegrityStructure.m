@@ -52,6 +52,12 @@ classdef TensegrityStructure < handle
         %variable used for reward scheme
         rewardTouchingGnd
         touchingWall
+        touchingWall1
+        touchingWall2
+        touchingWall3
+        touchingWall4
+        
+        notTouchingGround
         
     end
     
@@ -167,6 +173,12 @@ classdef TensegrityStructure < handle
             obj.touchingWall=zeros(12,1);
             
             obj.rewardTouchingGnd=0;
+            
+            obj.notTouchingGround=logical(zeros(12,1));
+            obj.touchingWall1= logical(zeros(12,1));
+                obj.touchingWall2= logical(zeros(12,1));
+                obj.touchingWall3= logical(zeros(12,1));
+                obj.touchingWall4= logical(zeros(12,1));
                 
             
         end
@@ -231,7 +243,7 @@ classdef TensegrityStructure < handle
         
         %%%%%%%%%%%%%%%%%%% Dynamics Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function dynamicsUpdate(obj,tspan,y0)
-            persistent lastContact lastContactWallYZ lastContactWallXZ rewardMemory
+            persistent lastContact lastContactWallYZ lastContactWallXZ 
             if(nargin>2)
                 obj.ySim = y0;
             end
@@ -241,7 +253,6 @@ classdef TensegrityStructure < handle
                 lastContactWallYZ=obj.nodePoints(:,2:3);
                 lastContactWallXZ=obj.nodePoints(:,[1 3]);
                 %rewardCnt=0;
-                rewardMemory=0;
                 obj.rewardTouchingGnd=0;
             else
                 y = obj.ySim;
@@ -315,6 +326,18 @@ classdef TensegrityStructure < handle
             % Convert angle in degrees instead of radians
             angle=angle*180/pi;
             
+            %Compute rewards
+            rewardWallTouching=[sum(obj.touchingWall1)>0 sum(obj.touchingWall2)>0 sum(obj.touchingWall3)>0 sum(obj.touchingWall4)>0];
+            
+            if and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)>=3)
+                obj.rewardTouchingGnd=1;
+
+            elseif and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)<3)
+                obj.rewardTouchingGnd=-1;
+            else
+                obj.rewardTouchingGnd=0;
+            end
+            
             
             function nodeXYZdoubleDot = getAccel(nodeXYZ,nodeXYZdot)
                 memberNodeXYZ = nodeXYZ(topN,:) - nodeXYZ(botN,:); % Member XYZ matrix M
@@ -352,32 +375,32 @@ classdef TensegrityStructure < handle
                 FF = CC*GG;
                 
                 %update points not in contact with the ground
-                notTouchingGround = (nodeXYZ(:,3) - groundH)>0;
+                obj.notTouchingGround = (nodeXYZ(:,3) - groundH)>0;
                 
                 %Update points not in contact with the wall
                 %Wall 1 and 2 are on the zy plane
                 %Wall 3 and 4 are on the zx plane
                 %Determine which walls the endcaps are touching
-                touchingWall1= (nodeXYZ(:,1)-obj.wallPos)>0;
-                touchingWall2= (nodeXYZ(:,1)-obj.wallNeg)<0;
-                touchingWall3= (nodeXYZ(:,2)-obj.wallNeg)<0;
-                touchingWall4= (nodeXYZ(:,2)-obj.wallPos)>0;
+                obj.touchingWall1= (nodeXYZ(:,1)-obj.wallPos)>0;
+                obj.touchingWall2= (nodeXYZ(:,1)-obj.wallNeg)<0;
+                obj.touchingWall3= (nodeXYZ(:,2)-obj.wallNeg)<0;
+                obj.touchingWall4= (nodeXYZ(:,2)-obj.wallPos)>0;
                 %Determine which endcaps are not touching any wall
-                notTouchingWallYZ = ~touchingWall1 & ~touchingWall2;
-                notTouchingWallXZ = ~touchingWall3 & ~touchingWall4;
-                obj.touchingWall=touchingWall1 | touchingWall2 | touchingWall3 | touchingWall4;
+                notTouchingWallYZ = ~obj.touchingWall1 & ~obj.touchingWall2;
+                notTouchingWallXZ = ~obj.touchingWall3 & ~obj.touchingWall4;
+                obj.touchingWall=obj.touchingWall1 | obj.touchingWall2 | obj.touchingWall3 | obj.touchingWall4;
                 
                 %Compute normal forces for the ground
                 normForces = (groundH-nodeXYZ(:,3)).*(Kp - Kd*nodeXYZdot(:,3));
-                normForces(notTouchingGround) = 0; %norm forces not touching the ground are zero
+                normForces(obj.notTouchingGround) = 0; %norm forces not touching the ground are zero
                 
                 %Compute normal forces for the wall
                 % Separate computation for stuff on YZ and XZ planes
                 normForcesWallYZ=(obj.wallPos-nodeXYZ(:,1)).*(KpW - KdW*nodeXYZdot(:,1));
-                normForcesWallYZ(touchingWall2)=(obj.wallNeg-nodeXYZ(touchingWall2,1)).*(KpW - KdW*nodeXYZdot(touchingWall2,1));
+                normForcesWallYZ(obj.touchingWall2)=(obj.wallNeg-nodeXYZ(obj.touchingWall2,1)).*(KpW - KdW*nodeXYZdot(obj.touchingWall2,1));
                 normForcesWallYZ(notTouchingWallYZ)=0;
                 normForcesWallXZ=(obj.wallNeg-nodeXYZ(:,2)).*(KpW - KdW*nodeXYZdot(:,2));
-                normForcesWallXZ(touchingWall4)=(obj.wallPos-nodeXYZ(touchingWall4,2)).*(KpW - KdW*nodeXYZdot(touchingWall4,2));
+                normForcesWallXZ(obj.touchingWall4)=(obj.wallPos-nodeXYZ(obj.touchingWall4,2)).*(KpW - KdW*nodeXYZdot(obj.touchingWall4,2));
                 normForcesWallXZ(notTouchingWallXZ)=0;
                 %Get velocity for the three planes (xy,yz and xz)
                 % Velocity on the xy plane will be used for ground forces
@@ -393,15 +416,15 @@ classdef TensegrityStructure < handle
                 % Keep nodes of top of structure above a certain height
                 % to simulate bar collisions near packed configuration
                 minHeight = 0.15;
-                notTouchingGround = (nodeXYZ(:,3) - (groundH + minHeight))>0;
+                obj.notTouchingGround = (nodeXYZ(:,3) - (groundH + minHeight))>0;
                 %Compute normal forces
                 normForces2 = ((groundH + minHeight)-nodeXYZ(:,3)).*(Kp - Kd*nodeXYZdot(:,3));
-                normForces2(notTouchingGround) = 0; %norm forces not touching are zero
+                normForces2(obj.notTouchingGround) = 0; %norm forces not touching are zero
                 normForces2(1:2:12, :) = 0; % Don't apply force to other nodes than top ones.
                 
                 %Possible static friction to apply on the gorund
                 staticF = kFP*(lastContact - nodeXYZ(:,1:2)) - kFD*xyDot;
-                staticNotApplied = (sum((staticF).^2,2) > (muS*normForces).^2)|notTouchingGround;
+                staticNotApplied = (sum((staticF).^2,2) > (muS*normForces).^2)|obj.notTouchingGround;
                 staticF(staticNotApplied,:) = 0;
                 
                 %Possible static friction against the YZ walls
@@ -454,37 +477,6 @@ classdef TensegrityStructure < handle
                 % Apply gravity
                 nodeXYZdoubleDot(:,3) = nodeXYZdoubleDot(:,3)  -9.81;
                 nodeXYZdoubleDot(fN,:) = 0;
-                
-
-                %Make sure that all the walls are touched to give a reward
-                %Create logical array that contains wall touching
-                %information
-                rewardWallTouching=[sum(touchingWall1)>0 sum(touchingWall2)>0 sum(touchingWall3)>0 sum(touchingWall4)>0];
-                
-                %Compute rewards
-
-%                 if and(and(~notTouchingGround==logical(zeros(12,1)),xor(rewardCnt==0,rewardMemory==1)),sum(rewardWallTouching)>3)
-%                     rewardCnt=rewardCnt+1;
-%                     rewardMemory=1;
-% 
-%                 else
-%                     rewardCnt=0;
-%                     rewardMemory=0;
-%                 end
-
-                
-                if and(and(~notTouchingGround==logical(zeros(12,1)),sum(rewardWallTouching)>3),rewardMemory==0)
-                    obj.rewardTouchingGnd=obj.rewardTouchingGnd+1;
-                    %rewardMemory=1;
-
-                elseif and(~notTouchingGround==logical(zeros(12,1)),sum(rewardWallTouching)<3)
-                    obj.rewardTouchingGnd=-10;
-                    rewardMemory=1;
-                    %rewardCnt=0;
-                    %rewardMemory=0;
-                end
-                
-                %obj.rewardTouchingGnd=rewardCnt;
 
                 
                 

@@ -181,19 +181,18 @@ classdef myEnvironmentSetup <handle
             for i=1:24
                 %actions=1 means that rest length of string has to increase
                 if actions(i)==1 
-                    newL= tensStruct.simStruct.stringRestLengths(i)+env.deltaSpool;
+                    tensStruct.simStruct.stringRestLengths(i)= tensStruct.simStruct.stringRestLengths(i)+env.deltaSpool;
                     %spoolingDistance(i)=env.deltaSpool;
                 %actions=2 means that rest length of string has to increase
                 elseif actions(i)==2
-                    newL= tensStruct.simStruct.stringRestLengths(i)-env.deltaSpool;
+                    tensStruct.simStruct.stringRestLengths(i)= tensStruct.simStruct.stringRestLengths(i)-env.deltaSpool;
                     %spoolingDistance(i)=-env.deltaSpool;
                 end
                 
                 %Do not allow large or small string length measurements
-                %if actions(i)>0 && newL>1.0 && newL<1.8
-                if actions(i)>0 
-                    tensStruct.simStruct.stringRestLengths(i) = newL;
-                end
+%                 if actions(i)>0 
+%                     tensStruct.simStruct.stringRestLengths(i) = newL;
+%                 end
             end
             %Apply actions
             %tensStruct.simStruct.stringRestLengths(motorsToMove) = tensStruct.simStruct.stringRestLengths(motorsToMove)+spoolingDistance(motorsToMove);
@@ -225,11 +224,11 @@ classdef myEnvironmentSetup <handle
         
         
         function reward= computeRewards(env)
-            if env.superBall.rewardTouchingGnd>0
-                reward=env.superBall.rewardTouchingGnd;
-            else
-                reward=0;
-            end
+%             if env.superBall.rewardTouchingGnd>0
+              reward=env.superBall.rewardTouchingGnd;
+%             else
+%                 reward=0;
+%             end
         end
         
         function done = computeDone(env)
