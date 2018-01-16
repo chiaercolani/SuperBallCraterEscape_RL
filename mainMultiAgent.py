@@ -33,10 +33,10 @@ matlab.createGraph(env)
 
 #Define some useful variables
 lr=0.02                     # Learning rate
-H=8                         # Size of the hidden layer
+H=4                         # Size of the hidden layer
 L=1                         # Number of hidden layers (exclude input and output layers)
-gamma=0.99                  # Gamma used to decay the rewards, higher gamma values= future matters more
-episode_number=3000         # Number of episodes used to train the NN
+gamma=0.5                  # Gamma used to decay the rewards, higher gamma values= future matters more
+episode_number=200         # Number of episodes used to train the NN
 max_ep_cycles=300           # Maximum number of cycles in each episode
 j_episode=0
 error_cnt=0                 #Number of times the simulation crashed
@@ -100,7 +100,7 @@ while j_episode<episode_number:
         if RENDER:
             matlab.updateGraph(env)
         # If the environment asserts the done signal, collect reward and start a new episode
-        #Done if 300 iterations are completed
+
 
     if not(env.superBallDynamicsPlot.plotErrorFlag==1):
         #print(agent['A0'].ep_rewards)

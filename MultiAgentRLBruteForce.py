@@ -6,7 +6,7 @@ import os
 
 class agent_class:
 
-    def __init__(self,learning_rate,actions_size,hidden_layer_size,features_size,gamma,L,n):
+    def __init__(self,learning_rate,actions_size,hidden_layer_size,features_size,gamma,L,n,m):
 
         self.lr=learning_rate
         self.a_size=actions_size
@@ -17,7 +17,7 @@ class agent_class:
         self.motorNumber=24
         self.n=n
         self.dir= os.path.dirname(os.path.realpath(__file__))
-
+        self.m=m
         self.ep_observations, self.ep_actions, self.ep_rewards = [], [], []
 
         #INITALIZE NEURAL NETWORK
@@ -34,10 +34,10 @@ class agent_class:
 
             # Initialize weights and biases
             with tf.name_scope('init'):
-                Wx = tf.get_variable("Wx"+str(self.n), shape=[self.f_size, self.hl_size],initializer=tf.contrib.layers.xavier_initializer())
-                Wy = tf.get_variable("Wy"+str(self.n), shape=[self.hl_size, self.a_size],initializer=tf.contrib.layers.xavier_initializer())
-                bh = tf.Variable(tf.zeros([1,self.hl_size]),name="bh"+str(self.n));
-                by = tf.Variable(tf.zeros([1,self.a_size]),name="by"+str(self.n));
+                Wx = tf.get_variable("Wx_"+str(self.n)+"_"+str(self.m), shape=[self.f_size, self.hl_size],initializer=tf.contrib.layers.xavier_initializer())
+                Wy = tf.get_variable("Wy_"+str(self.n)+"_"+str(self.m), shape=[self.hl_size, self.a_size],initializer=tf.contrib.layers.xavier_initializer())
+                bh = tf.Variable(tf.zeros([1,self.hl_size]),name="bh_"+str(self.n)+"_"+str(self.m));
+                by = tf.Variable(tf.zeros([1,self.a_size]),name="by_"+str(self.n)+"_"+str(self.m));
 
 
             # Hidden Layer of the NN: RELU
@@ -56,7 +56,7 @@ class agent_class:
             self.sess=tf.Session(graph=self.graph)
 
             # Run the session and initialize all the variables
-            #self.sess.run(tf.global_variables_initializer())
+            self.sess.run(tf.global_variables_initializer())
 
     def initializeVars(self):
         self.sess.run(tf.global_variables_initializer())
@@ -67,7 +67,7 @@ class agent_class:
     def pick_action(self,feature):
         # Run the NN and generate the probability of picking each action
         prob_dist=self.sess.run(self.actions_prob,feed_dict={self.nn_features:feature})
-        print(prob_dist)
+        #print(prob_dist)
         # Pick which action to perform with probability=prob_dist
         action=[]
         for i in range(prob_dist.shape[0]):
@@ -77,11 +77,12 @@ class agent_class:
     def pickActionHighestProb(self,feature):
         # Run the NN and generate the probability of picking each action
         prob_dist=self.sess.run(self.actions_prob,feed_dict={self.nn_features:feature})
-        print(prob_dist)
+        prob_dist=np.reshape(prob_dist,(3))
+
         # Pick which action to perform with probability=prob_dist
-        action=[]
-        for i in range(prob_dist.shape[0]):
-            action =np.append(action, np.argmax(prob_dist[i,:]))
+
+        action =np.argmax(prob_dist)
+
         return action
 
     def cancel_transition(self):
@@ -120,25 +121,26 @@ class agent_class:
         self.ep_observations, self.ep_actions, self.ep_rewards = [], [], []
 
 
-    def saveSession(self,i):
-        self.saver.save(self.sess,self.dir+'/bruteForceResults/network'+str(self.n))
+    def saveSession(self):
+        self.saver.save(self.sess,self.dir+'/MultiBruteForceResults/network_'+str(self.n)+'_'+str(self.m))
 
-    def loadSession(self,i):
-        self.saver = tf.train.import_meta_graph(self.dir+'/bruteForceResults/network'+str(i)+'.meta')
-        self.saver.restore(self.sess,self.dir+'/bruteForceResults/network'+str(i))
+    def loadSession(self):
+        self.saver = tf.train.import_meta_graph(self.dir+'/MultiBruteForceResults/network_'+str(self.n)+'_'+str(self.m)+'.meta')
+        self.saver.restore(self.sess,self.dir+'/MultiBruteForceResults/network_'+str(self.n)+'_'+str(self.m))
         # Get saved graph
         #self.graph=tf.get_default_graph()
         #print(self.graph.get_operations())
-        with self.graph.as_default():
-            variables_names =[v.name for v in tf.trainable_variables()]
-            values = self.sess.run(variables_names)
-            for k,v in zip(variables_names, values):
-                print(k, v)
+        #Code to print the variables
+        #with self.graph.as_default():
+        #    variables_names =[v.name for v in tf.trainable_variables()]
+        #    values = self.sess.run(variables_names)
+        #    for k,v in zip(variables_names, values):
+        #        print(k, v)
 
     def runSession(self,observations):
         self.sess.run(feed_dict={self.nn_features:observations})
 
     def saveCoordinates(self,coordinates):
         #np.savetxt(self.dir+'/results/rewards.txt','NEW LINE')
-        np.savetxt(self.dir+'/bruteForceResults/coordinates.txt',coordinates)
+        np.savetxt(self.dir+'/MultiBruteForceResults/coordinates.txt',coordinates)
         #r=rewards.tolist())

@@ -33,9 +33,9 @@ matlab.createGraph(env)
 
 #Define some useful variables
 lr=0.02                     # Learning rate
-H=8                         # Size of the hidden layer
+H=48                         # Size of the hidden layer
 L=1                         # Number of hidden layers (exclude input and output layers)
-gamma=0.99                  # Gamma used to decay the rewards, higher gamma values= future matters more
+gamma=0.5                  # Gamma used to decay the rewards, higher gamma values= future matters more
 episode_number=3000         # Number of episodes used to train the NN
 max_ep_cycles=300           # Maximum number of cycles in each episode
 j_episode=0
