@@ -206,6 +206,7 @@ classdef myEnvironmentSetup <handle
             observations=tensStruct.simStruct.stringRestLengths;
 
 
+
         end
         
         %Function that returns the coordinates of the center of mass

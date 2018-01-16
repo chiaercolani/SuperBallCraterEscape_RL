@@ -3,13 +3,11 @@
 import tensorflow as tf
 import numpy as np
 import os
-import matplotlib
-matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 # Connects Matlab to Pyhton
 import transplant
 # Imports Reinforcement learning class
-from RLBruteForce import agent_class
+from MultiAgentRLBruteForce import agent_class
 import time
 import timeit
 
@@ -43,7 +41,7 @@ error_cnt=0                 #Number of times the simulation crashed
 MOTOR_NUMBER=24
 RENDER=False
 # Number of brute force approach cases
-BRUTE_FORCE_CASES=500
+BRUTE_FORCE_CASES=200
 
 maxCoord=[]
 
@@ -57,10 +55,11 @@ maxCoord=[]
 # Generate one agent per motor
 agent={}
 for i in range(BRUTE_FORCE_CASES):
-    agent["A"+str(i)]=agent_class(learning_rate=lr,actions_size=3,hidden_layer_size=H,features_size=1,gamma=gamma,L=L,n=i)
-    agent["A"+str(i)].initializeVars()
-    agent["A"+str(i)].saveSession(i)
-    print(i)
+    #graph=tf.Graph()
+    for m in range(MOTOR_NUMBER):
+        agent["A_"+str(i)+"_"+str(m)]=agent_class(learning_rate=lr,actions_size=3,hidden_layer_size=H,features_size=MOTOR_NUMBER,gamma=gamma,L=L,n=i,m=m)
+        #agent["A"+str(i)+str(m)].initializeVars()
+        agent["A_"+str(i)+"_"+str(m)].saveSession()
 print('Neural networks are ready')
 
 
@@ -70,7 +69,8 @@ print('Saved all the neural networks')
 
 for i in range(BRUTE_FORCE_CASES):
     # Load session
-    agent["A"+str(i)].loadSession(i)
+    for m in range(MOTOR_NUMBER):
+        agent["A_"+str(i)+"_"+str(m)].loadSession()
     print('Loaded session '+str(i))
 
     #Start Evaluation Timer
@@ -78,7 +78,7 @@ for i in range(BRUTE_FORCE_CASES):
     #Observe initial rest lengths of the strings
     features = matlab.envReset(env,RENDER)
 
-    features=np.reshape(features,(24,1))
+    features=np.reshape(features,(1,MOTOR_NUMBER))
 
     #Initialize center of mass coordinates to 0
     centerMassCoord= []
@@ -86,16 +86,21 @@ for i in range(BRUTE_FORCE_CASES):
 
     for j in range(sessionTime):
 
-        action=agent["A"+str(i)].pick_action(features)
+        action=[]
+
+        for m in range(MOTOR_NUMBER):
+            action=np.append(action,agent["A_"+str(i)+"_"+str(m)].pick_action(features))
         observations= matlab.actionStep(env,action)
 
         # Assign the new features to the feature variable for the next cycle
         features=observations
+        features=np.reshape(features,(1,MOTOR_NUMBER))
 
         if env.superBallDynamicsPlot.plotErrorFlag==1:
             error_cnt +=1
             print("ERROR count ",error_cnt)
-            agent["A"+str(i)].cancel_transition()
+            for m in range(MOTOR_NUMBER):
+                agent["A_"+str(i)+"_"+str(m)].cancel_transition()
             break
 
         if RENDER:
@@ -113,7 +118,7 @@ for i in range(BRUTE_FORCE_CASES):
 
 
 print(maxCoord)
-agent["A"+str(i)].saveCoordinates(maxCoord)
+agent["A_"+str(i)+"_"+str(m)].saveCoordinates(maxCoord)
 print(np.amax(maxCoord))
 best=np.argmax(maxCoord)
 print(best)
