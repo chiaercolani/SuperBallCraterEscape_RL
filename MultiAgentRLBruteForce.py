@@ -49,6 +49,14 @@ class agent_class:
             # Compute probabilities with softmax function
             self.actions_prob=tf.nn.softmax(actions,name='actions_prob')
 
+            log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=actions, labels=self.action_holder)
+
+            # Loss function
+            loss=tf.reduce_mean(log_prob*self.reward_holder)
+
+            # Optimizer
+            self.optimizer=tf.train.AdamOptimizer(self.lr).minimize(loss)
+
             #Define saver object to save NN
             self.saver=tf.train.Saver()
 
@@ -115,8 +123,8 @@ class agent_class:
 
         # Stack horizontally the inputs, reshape the outputs to match the inputs and duplicate the rewards so that all outputs of the same
         # episode receive the same reward
-        self.sess.run(self.optimizer,feed_dict={self.nn_features: np.vstack(self.ep_observations),self.action_holder: np.reshape(self.ep_actions,np.array(self.ep_actions).shape[0]*np.array(self.ep_actions).shape[1]),self.reward_holder: np.repeat(rewards,24)})
-
+        #self.sess.run(self.optimizer,feed_dict={self.nn_features: np.vstack(self.ep_observations),self.action_holder: np.reshape(self.ep_actions,np.array(self.ep_actions).shape[0]*np.array(self.ep_actions).shape[1]),self.reward_holder: np.repeat(rewards,24)})
+        self.sess.run(self.optimizer,feed_dict={self.nn_features: np.vstack(self.ep_observations),self.action_holder: np.array(self.ep_actions),self.reward_holder: rewards})
         # Initialize episode observations, actions and rewards after learning
         self.ep_observations, self.ep_actions, self.ep_rewards = [], [], []
 
