@@ -3,6 +3,8 @@
 import tensorflow as tf
 import numpy as np
 import os
+import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 # Connects Matlab to Pyhton
 import transplant

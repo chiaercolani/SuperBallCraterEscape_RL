@@ -38,7 +38,7 @@ classdef myEnvironmentSetup <handle
             env.deltaSpool=deltaSpool;
             
             %Costumizable parameters
-            env.cDamp=800; % String damping coeff
+            env.cDamp=100; % String damping coeff
             env.K = 1000;  % String stiffness coeff
             env.barStCoeff=100000; % Bar stiffness coeff
             env.delT=delT; % Delta Time
@@ -48,8 +48,8 @@ classdef myEnvironmentSetup <handle
             env.wallPos=wallPosition;
             env.wallNeg=-wallPosition;
             env.wallHeight=wallHeight;
-            barSpacing = 0.375;
-            barLength = 1.7;
+            barLength = 1.7; %might break things, original 1.7
+            barSpacing = barLength / 4; %0.375;
             env.bars = [1:2:11; 
                     2:2:12];
             env.strings = [1  1   1  1  2  2  2  2  3  3  3  3  4  4  4  4  5  5  6  6  7  7  8  8;
@@ -59,7 +59,7 @@ classdef myEnvironmentSetup <handle
             env.stringstiffness = env.K*ones(24,1); % String stiffness (N/m)
             barStiffness = env.barStCoeff*ones(6,1); % Bar stiffness (N/m)
             stringDamping = env.cDamp*ones(24,1);  % String damping vector
-            nodalMass = 1.625*ones(12,1);
+            nodalMass = 3.2*ones(12,1); %1.625*ones(12,1);
 
             bar_radius = 0.025; % meters
             string_radius = 0.005;

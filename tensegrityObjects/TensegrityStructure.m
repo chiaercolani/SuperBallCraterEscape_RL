@@ -269,12 +269,12 @@ classdef TensegrityStructure < handle
             kFD = 5000;
             
              %friction model constants WALL
-            KpW = 40000;
+            KpW = 20000;
             KdW = 5000;
-            muSW = 0.8;
-            muDW = 0.7;
+            muSW = 0.64;
+            muDW = 0.54;
             kkW = 1000;
-            kFPW = 30000;
+            kFPW = 20000;
             kFDW = 5000;
 
             sim = obj.simStruct;

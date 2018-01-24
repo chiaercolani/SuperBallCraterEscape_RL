@@ -3,6 +3,8 @@
 import tensorflow as tf
 import numpy as np
 import os
+import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 # Connects Matlab to Pyhton
 import transplant
@@ -23,7 +25,7 @@ wallHeight=5.0
 delT=0.001             #time step
 
 #Define how much the motors can spool in or out in one tspan.
-deltaSpool=0.001
+deltaSpool=0.0005 # reduced from original 0.001
 
 env=matlab.myEnvironmentSetup(tspan,wallPosition,wallHeight,deltaSpool,delT)
 
