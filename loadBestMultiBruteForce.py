@@ -48,9 +48,10 @@ f= open('MultiBruteForceResults/coordinates.txt','r')
 coord=[]
 position=[]
 i=0
-baseLine=0.8
+minHeight=0.85
+maxHeight=2.5
 for line in f:
-    if float(line)>baseLine:
+    if float(line)>minHeight and float(line)<maxHeight:
         coord=np.append(coord,float(line))
         position=np.append(position,i)
     i=i+1
