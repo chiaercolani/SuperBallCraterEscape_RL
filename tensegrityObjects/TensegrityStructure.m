@@ -332,10 +332,13 @@ classdef TensegrityStructure < handle
             if and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)>=3)
                 obj.rewardTouchingGnd=1;
 
+
             elseif and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)<3)
                 obj.rewardTouchingGnd=-1;
+
             else
                 obj.rewardTouchingGnd=0;
+
             end
             
             
