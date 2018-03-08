@@ -45,7 +45,7 @@ RENDER=False
 
 maxCoord=[]
 
-f= open('NNMassimo/Results-6Feb-7pm/coordinates.txt','r')
+f= open('NNMassimo/Results-6Feb-11pm/coordinates.txt','r')
 coord=[]
 position=[]
 i=0
@@ -94,6 +94,8 @@ for pos in range(len(position)):
         #Observe initial length of the strings
         features=np.reshape(features,(1,MOTOR_NUMBER))
 
+        centerMassCoord= []
+        maxCoord=np.append(maxCoord,0)
 
         for i in range(max_ep_cycles):
 
@@ -131,7 +133,10 @@ for pos in range(len(position)):
             if RENDER:
                 matlab.updateGraph(env)
             # If the environment asserts the done signal, collect reward and start a new episode
-
+            coordinate=matlab.getCenterOfMass(env)
+            centerMassCoord=np.append(centerMassCoord,coordinate)
+            if coordinate>maxCoord[j_episode]:
+                maxCoord[j_episode]=coordinate
 
         if not(env.superBallDynamicsPlot.plotErrorFlag==1):
             #print(agent['A0'].ep_rewards)
@@ -154,11 +159,12 @@ for pos in range(len(position)):
             #    RENDER=True
 
             stop = timeit.default_timer()
-
+            agent["A_"+str(position[pos])+"_0"].saveRunCoordinates(centerMassCoord,j_episode)
             print ("Iteration time MultiAgent: ",stop - start )
 
     #save each session
     agent["A_"+str(position[pos])+"_0"].saveRewards(totRewardArray)
+    agent["A_"+str(position[pos])+"_0"].saveCoordinates(maxCoord)
     totRewardArray=0
     j_episode=0
     for m in range(MOTOR_NUMBER):
