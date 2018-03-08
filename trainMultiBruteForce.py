@@ -12,7 +12,8 @@ import time
 import timeit
 
 # Starting Matlab
-matlab = transplant.Matlab(arguments=['-desktop'])
+#matlab = transplant.Matlab(arguments=['-desktop'])
+matlab=transplant.Matlab(arguments=['desktop=True'])
 
 matlab.addpath('tensegrityObjects')
 
@@ -27,7 +28,8 @@ deltaSpool=0.0005
 
 env=matlab.myEnvironmentSetup(tspan,wallPosition,wallHeight,deltaSpool,delT)
 
-matlab.createGraph(env)
+matlab.createSuperBallGraph(env)
+
 
 #BAD 0 8 and 17
 

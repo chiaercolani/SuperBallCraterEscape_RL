@@ -100,18 +100,18 @@ classdef myEnvironmentSetup <handle
             
             %initialize rewards to 0
             env.rewards=0;
-            
+	    disp('Environment created');            
         end
         
-        function createGraph(env)
-
+        function f= createSuperBallGraph(env)
+	    disp('start of function');
             barLength = 1.7;
             f = figure('units','normalized','outerposition',[0 0 1 1]);
             % use a method within TensegrityPlot class to generate a plot of the
             % structure
             generatePlot(env.superBallDynamicsPlot,gca);
             updatePlot(env.superBallDynamicsPlot,env.superBall.touchingWall);
-
+	    disp('graph done');
             %settings to make it pretty
             axis equal
             view(3)
@@ -162,6 +162,7 @@ classdef myEnvironmentSetup <handle
             set(walls,'FaceColor',[0 0 1],'FaceAlpha',0.5);
 
             xlabel('x'); ylabel('y'); zlabel('z');
+	    disp('function ends');
         end
         
         

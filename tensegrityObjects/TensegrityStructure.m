@@ -329,12 +329,12 @@ classdef TensegrityStructure < handle
             %Compute rewards
             rewardWallTouching=[sum(obj.touchingWall1)>0 sum(obj.touchingWall2)>0 sum(obj.touchingWall3)>0 sum(obj.touchingWall4)>0];
             
-            if and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)>=3)
-                obj.rewardTouchingGnd=1;
+            if and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)>=2)
+                obj.rewardTouchingGnd=10;
 
 
-            elseif and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)<3)
-                obj.rewardTouchingGnd=-1;
+            elseif and(obj.notTouchingGround==logical(ones(12,1)),sum(rewardWallTouching)<2)
+                obj.rewardTouchingGnd=-5;
 
             else
                 obj.rewardTouchingGnd=0;
